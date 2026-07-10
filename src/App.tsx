@@ -246,8 +246,8 @@ function App() {
     setMessage('Connecting to backend...');
 
     const endpoint = isLoginView 
-      ? 'http://portal-backend-lm3j.onrender.com/api/users/login'
-      : 'http://portal-backend-lm3j.onrender.com/api/users/register';
+      ? 'https://portal-backend-lm3j.onrender.com/api/users/login'
+      : 'https://portal-backend-lm3j.onrender.com/api/users/register';
 
     const payload = isLoginView 
       ? { email, password } 
