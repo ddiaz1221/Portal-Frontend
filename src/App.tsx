@@ -62,7 +62,7 @@ function App() {
   const fetchUserNotes = async () => {
     if (!loggedInUser) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/notes/${loggedInUser.id}`);
+      const response = await fetch(`https://portal-backend-lm3j.onrender.com/api/notes/${loggedInUser.id}`);
       if (response.ok) {
         const data = await response.json();
         setNotes(data);
@@ -75,7 +75,7 @@ function App() {
   const fetchTrashNotes = async () => {
     if (!loggedInUser) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/notes/trash/${loggedInUser.id}`);
+      const response = await fetch(`https://portal-backend-lm3j.onrender.com/api/notes/trash/${loggedInUser.id}`);
       if (response.ok) {
         const data = await response.json();
         setTrashNotes(data);
@@ -90,7 +90,7 @@ function App() {
     if (!newNoteContent.trim() || !loggedInUser) return;
 
     try {
-      const response = await fetch('http://localhost:5000/api/notes/save', {
+      const response = await fetch('https://portal-backend-lm3j.onrender.com/api/notes/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -115,7 +115,7 @@ function App() {
 
   const handleSoftDelete = async (noteId: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/notes/status/${noteId}`, {
+      const response = await fetch(`https://portal-backend-lm3j.onrender.com/api/notes/status/${noteId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isDeleted: true })
@@ -130,7 +130,7 @@ function App() {
 
   const handleRestoreNote = async (noteId: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/notes/status/${noteId}`, {
+      const response = await fetch(`https://portal-backend-lm3j.onrender.com/api/notes/status/${noteId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isDeleted: false })
@@ -146,7 +146,7 @@ function App() {
   const handlePermanentDelete = async (noteId: string) => {
     if (!window.confirm('Are you absolutely sure you want to permanently delete this note?')) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/notes/purge/${noteId}`, {
+      const response = await fetch(`https://portal-backend-lm3j.onrender.com/api/notes/purge/${noteId}`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -163,7 +163,7 @@ function App() {
     if (!loggedInUser || !editUsername.trim()) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/users/update-username/${loggedInUser.id}`, {
+      const response = await fetch(`https://portal-backend-lm3j.onrender.com/api/users/update-username/${loggedInUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newUsername: editUsername })
@@ -194,7 +194,7 @@ function App() {
     if (!loggedInUser || !editPassword) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/users/update-password/${loggedInUser.id}`, {
+      const response = await fetch(`https://portal-backend-lm3j.onrender.com/api/users/update-password/${loggedInUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newPassword: editPassword })
@@ -226,7 +226,7 @@ function App() {
     if (!finalDoubleCheck) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/users/delete-account/${loggedInUser.id}`, {
+      const response = await fetch(`https://portal-backend-lm3j.onrender.com/api/users/delete-account/${loggedInUser.id}`, {
         method: 'DELETE'
       });
 
@@ -246,8 +246,8 @@ function App() {
     setMessage('Connecting to backend...');
 
     const endpoint = isLoginView 
-      ? 'http://localhost:5000/api/users/login' 
-      : 'http://localhost:5000/api/users/register';
+      ? 'http://portal-backend-lm3j.onrender.com/api/users/login'
+      : 'http://portal-backend-lm3j.onrender.com/api/users/register';
 
     const payload = isLoginView 
       ? { email, password } 
