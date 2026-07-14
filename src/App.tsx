@@ -9,9 +9,13 @@ interface UserSession {
 
 interface NoteItem {
   _id: string;
-  userId: string;
+  sender: {
+    _id: string;
+    username: string;
+  };
+  receiver: string;
   content: string;
-  isDeleted: boolean;
+  status: 'inbox' | 'saved' | 'trash';
   createdAt: string;
 }
 
@@ -35,6 +39,20 @@ function App() {
   const [settingsMessage, setSettingsMessage] = useState('');
   const [settingsError, setSettingsError] = useState(false);
 
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('theme') || 'dark';
+  })
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'light'){
+      root.classList.add('light');
+    } else {
+      root.classList.remove('light');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
   useEffect(() => {
     const savedToken = localStorage.getItem('userToken');
     const savedUser = localStorage.getItem('userData');
@@ -51,13 +69,81 @@ function App() {
 
   useEffect(() => {
     if (loggedInUser) {
-      if (activeTab === 'saved') {
+      if (activeTab === 'home'){
+        fetchInboxMessage();
+      } else if (activeTab === 'saved') {
         fetchUserNotes();
       } else if (activeTab === 'trash') {
         fetchTrashNotes();
       }
     }
   }, [activeTab, loggedInUser]);
+
+  const fetchInboxMessage = async () => {
+    try {
+      const token = localStorage.getItem('userToken');
+      const response = await fetch('https://portal-backend-1m3j.onrender.com/api/notes?status=inbox', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      const data = await response.json();
+      if (response.ok){
+        setNotes(data);
+      }
+    } catch (error){
+      console.error('Error loading inbox notes:', error);
+    }
+  }
+
+  const sendNewNote = async (receiverUsername: string, content: string) => {
+    try {
+      const token = localStorage.getItem('userToken');
+      const response = await fetch('https://portal-backend-1m3j.onrender.com/api/notes/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ receiverUsername, content })
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        setNoteMessage('Note sent successfully!');
+        setNewNoteContent('');
+        fetchInboxMessage(); 
+      } else {
+        setNoteMessage(data.message || 'Failed to send note.');
+      }
+    } catch (error) {
+      setNoteMessage('Server error sending note.');
+    }
+  };
+
+  const updateNoteStatus = async (noteId: string, targetStatus: 'saved' | 'trash') => {
+    try {
+      const token = localStorage.getItem('userToken');
+      const response = await fetch(`https://portal-backend-1m3j.onrender.com/api/notes/${noteId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: targetStatus })
+      });
+      
+      if (response.ok) {
+        setNotes((prevNotes) => prevNotes.filter(note => note._id !== noteId));
+      }
+    } catch (error) {
+      console.error(`Error moving note to ${targetStatus}:`, error);
+    }
+  };
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev == 'dark' ? 'light' : 'dark'));
+  }
 
   const fetchUserNotes = async () => {
     if (!loggedInUser) return;
@@ -453,72 +539,148 @@ function App() {
 
             {/* --- UPGRADED: LIVE INTERACTIVE ACCOUNT SETTINGS ENGINE --- */}
             {activeTab === 'settings' && (
-              <div className="space-y-6 max-w-2xl">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                  <h2 className="text-2xl font-black text-gray-800 mb-1">Account Control Center</h2>
-                  <p className="text-gray-500 text-sm">Manage your profile registration criteria, security keys, or delete your file nodes entirely.</p>
-                </div>
-
-                {/* Info feedback bar */}
-                {settingsMessage && (
-                  <div className={`p-4 rounded-xl text-sm font-bold border ${settingsError ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
-                    {settingsMessage}
-                  </div>
-                )}
-
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 space-y-6">
-                  {/* Read-Only Email Block */}
+            <div className="space-y-6 max-w-2xl">
+              {/* Combined Tailwind layout with CSS Variable inline styling */}
+              <div 
+                className="p-6 rounded-2xl shadow-sm border transition-all"
+                style={{ 
+                  backgroundColor: 'var(--bg-secondary)', 
+                  borderColor: 'var(--border-color)' 
+                }}
+              >
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Registered Email Connection</label>
-                    <input type="text" disabled value={loggedInUser.email} className="w-full bg-gray-50 border border-gray-200 px-4 py-2.5 rounded-xl text-gray-400 font-mono font-medium cursor-not-allowed text-sm" />
+                    <h2 className="text-2xl font-black mb-1" style={{ color: 'var(--text-primary)' }}>
+                      Account Control Center
+                    </h2>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      Manage your profile registration criteria, security keys, or delete your file nodes entirely.
+                    </p>
                   </div>
-
-                  <hr className="border-gray-100" />
-
-                  {/* Change Username Module Form */}
-                  <form onSubmit={handleUpdateUsername} className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Update Account Username</label>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <input type="text" value={editUsername} onChange={(e) => setEditUsername(e.target.value)} required className="flex-1 bg-white border border-gray-200 px-4 py-2 rounded-xl text-gray-800 font-semibold text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="New username" />
-                        <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-xl text-xs transition-all shadow-sm">
-                          Save Username
-                        </button>
-                      </div>
-                    </div>
-                  </form>
-
-                  <hr className="border-gray-100" />
-
-                  {/* Change Password Module Form */}
-                  <form onSubmit={handleUpdatePassword} className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Update Account Security Password</label>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <input type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} required minLength={6} className="flex-1 bg-white border border-gray-200 px-4 py-2 rounded-xl text-gray-800 font-semibold text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter new secret password (min 6 chars)" />
-                        <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-xl text-xs transition-all shadow-sm">
-                          Change Password
-                        </button>
-                      </div>
-                    </div>
-                  </form>
-
-                  <hr className="border-gray-100" />
-
-                  {/* Danger Zone: Hard Delete Profile Engine */}
-                  <div className="bg-red-50/50 p-5 rounded-2xl border border-red-100/60 space-y-3">
-                    <div className="text-left">
-                      <h3 className="text-sm font-black text-red-800 uppercase tracking-wide">Danger Zone</h3>
-                      <p className="text-xs text-red-600 font-medium mt-0.5">Permanently close and purge this portal profile row from the central server array completely.</p>
-                    </div>
-                    <button type="button" onClick={handleDeleteAccount} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs tracking-wide transition-all shadow-md transform active:scale-98">
-                      Permanently Delete Account
-                    </button>
-                  </div>
-
+        
+                  {/* Theme Toggle Button */}
+                  <button 
+                    type="button"
+                    onClick={toggleTheme}
+                    className="self-start sm:self-center font-bold py-2 px-4 rounded-xl text-xs tracking-wide transition-all shadow-sm shrink-0"
+                    style={{
+                      backgroundColor: theme === 'light' ? '#111827' : '#ffffff',
+                      color: theme === 'light' ? '#ffffff' : '#111827'
+                    }}
+                  >
+                    {theme === 'light' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+                  </button>
                 </div>
               </div>
-            )}
+
+              {/* Info feedback bar */}
+              {settingsMessage && (
+                <div className={`p-4 rounded-xl text-sm font-bold border ${settingsError ? 'bg-red-50 border-red-200 text-red-700' : 'bg-green-50 border-green-200 text-green-700'}`}>
+                  {settingsMessage}
+                </div>
+              )}
+
+              {/* Main Settings Card */}
+              <div 
+                className="p-6 rounded-2xl shadow-sm border space-y-6 transition-all"
+                style={{ 
+                backgroundColor: 'var(--bg-secondary)', 
+                borderColor: 'var(--border-color)' 
+              }}
+            >
+              {/* Read-Only Email Block */}
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  Registered Email Connection
+                </label>
+                <input 
+                  type="text" 
+                  disabled 
+                  value={loggedInUser.email} 
+                  className="w-full border px-4 py-2.5 rounded-xl font-mono font-medium cursor-not-allowed text-sm" 
+                  style={{ 
+                    backgroundColor: 'var(--bg-primary)', 
+                    borderColor: 'var(--border-color)',
+                    color: 'var(--text-secondary)'
+                  }}
+                />
+              </div>
+
+              <hr style={{ borderColor: 'var(--border-color)' }} />
+
+              {/* Change Username Module Form */}
+              <form onSubmit={handleUpdateUsername} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                    Update Account Username
+                  </label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input 
+                      type="text" 
+                      value={editUsername} 
+                      onChange={(e) => setEditUsername(e.target.value)} 
+                      required 
+                      className="flex-1 border px-4 py-2 rounded-xl font-semibold text-sm outline-none" 
+                      style={{ 
+                        backgroundColor: 'var(--bg-primary)', 
+                        borderColor: 'var(--border-color)',
+                        color: 'var(--text-primary)'
+                      }}
+                      placeholder="New username" 
+                    />
+                    <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-xl text-xs transition-all shadow-sm">
+                      Save Username
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              <hr style={{ borderColor: 'var(--border-color)' }} />
+
+              {/* Change Password Module Form */}
+              <form onSubmit={handleUpdatePassword} className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                    Update Account Security Password
+                  </label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input 
+                      type="password" 
+                      value={editPassword} 
+                      onChange={(e) => setEditPassword(e.target.value)} 
+                      required 
+                      minLength={6} 
+                      className="flex-1 border px-4 py-2 rounded-xl font-semibold text-sm outline-none" 
+                      style={{ 
+                        backgroundColor: 'var(--bg-primary)', 
+                        borderColor: 'var(--border-color)',
+                        color: 'var(--text-primary)'
+                      }}
+                      placeholder="Enter new secret password (min 6 chars)" 
+                    />
+                    <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-5 rounded-xl text-xs transition-all shadow-sm">
+                      Change Password
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              <hr style={{ borderColor: 'var(--border-color)' }} />
+
+              {/* Danger Zone */}
+              <div className="bg-red-50/50 dark:bg-red-950/20 p-5 rounded-2xl border border-red-100/60 dark:border-red-900/40 space-y-3">
+                <div className="text-left">
+                  <h3 className="text-sm font-black text-red-800 dark:text-red-400 uppercase tracking-wide">Danger Zone</h3>
+                  <p className="text-xs text-red-600 dark:text-red-400 font-medium mt-0.5">Permanently close and purge this portal profile row from the central server array completely.</p>
+                </div>
+                <button type="button" onClick={handleDeleteAccount} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs tracking-wide transition-all shadow-md transform active:scale-98">
+                  Permanently Delete Account
+                </button>
+              </div>
+
+            </div>
+          </div>
+        )}
 
           </main>
         </div>

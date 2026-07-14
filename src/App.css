@@ -181,4 +181,30 @@
     right: 0;
     border-right-color: var(--border);
   }
+
+  /* default for dark mode styles */
+  :root {
+    --bg-primary: #0b0f19;
+    --bg-secondary: #111827;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --border-color: #1f2937;
+    --accent-color: #3b82f6;
+  }
+  
+  /* light mode overrides */
+  :root.light {
+    --bg-primary: #f9fafb;
+    --bg-secondary: #ffffff;
+    --text-primary: #111827;
+    --text-secondary: #4b5563;
+    --border-color: #e5e7eb;
+    --accent-color: #2563eb;
+  }
+
+  body{
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
 }
