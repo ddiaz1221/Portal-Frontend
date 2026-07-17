@@ -443,25 +443,98 @@ function App() {
           {/* DYNAMIC VIEWS MAIN PANEL */}
           <main className="flex-1 p-6 md:p-8 overflow-y-auto">
             
-            {activeTab === 'home' && (
-              <div className="space-y-6">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-                  <h2 className="text-2xl font-black text-gray-800 mb-2">Welcome Home, {loggedInUser.username}! 👋</h2>
-                  <p className="text-gray-600 text-sm">This is your main centralized command dashboard view panel.</p>
+           {activeTab === 'home' && (
+              <div className="space-y-6 max-w-4xl mx-auto">
+                {/* Welcome Banner */}
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+                  <h2 className="text-2xl font-black text-gray-800 dark:text-gray-100 mb-2">Welcome Home, {loggedInUser.username}! 👋</h2>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">This is your main centralized messaging and network dashboard command panel.</p>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex flex-col justify-between">
-                    <h3 className="font-bold text-gray-800 uppercase tracking-wider text-xs mb-4 text-gray-400">Database Info</h3>
-                    <div className="text-sm font-mono text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-200 select-all break-all">
-                      ID: {loggedInUser.id}
-                    </div>
+    
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Left Column: Send Form */}
+                  <div className="flex-1 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 h-fit">
+                    <h3 className="text-lg font-black text-gray-800 dark:text-gray-100 mb-4">Send a New Note</h3>
+        
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      const recipient = formData.get('recipientUsername') as string;
+                      const msg = formData.get('noteText') as string;
+                      sendNewNote(recipient, msg);
+                      e.currentTarget.reset();
+                    }} className="space-y-4">
+          
+                      <div>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Recipient Username</label>
+                        <input 
+                          name="recipientUsername" 
+                          type="text" 
+                          required 
+                          placeholder="Enter user..." 
+                          className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-xl text-gray-800 dark:text-gray-200 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Message Content</label>
+                        <textarea 
+                          name="noteText" 
+                          required 
+                          rows={4} 
+                          placeholder="Type a secure note..." 
+                          className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-xl text-gray-800 dark:text-gray-200 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                        />
+                      </div>
+
+                      <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs tracking-wide transition-all shadow-md">
+                        Send Note
+                      </button>
+                    </form>
+                    {noteMessage && <p className="text-xs font-semibold text-blue-500 mt-3 text-center">{noteMessage}</p>}
                   </div>
-                  <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex flex-col justify-between">
-                    <h3 className="font-bold text-gray-800 uppercase tracking-wider text-xs mb-4 text-gray-400">Security Check</h3>
-                    <div className="text-sm text-green-700 bg-green-50 p-3 rounded-xl border border-green-100 font-medium">
-                      🔒 State persistence running natively.
-                    </div>
+
+                  {/* Right Column: Inbox Feed */}
+                  <div className="flex-[2] space-y-4">
+                    <h3 className="text-lg font-black text-gray-800 dark:text-gray-100">Your Incoming Inbox</h3>
+        
+                    {notes.length === 0 ? (
+                      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-gray-200 dark:border-gray-700 text-center">
+                        <p className="text-gray-400 text-sm font-medium">No system transmission notes received yet.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {notes.map((note) => (
+                          <div key={note._id} className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm transition-all">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="text-xs font-bold bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-lg">
+                                From: @{note.sender?.username || 'unknown'}
+                              </span>
+                              <span className="text-[10px] text-gray-400 font-mono">
+                                {new Date(note.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                
+                            <p className="text-sm text-gray-700 dark:text-gray-300 my-3 font-medium whitespace-pre-wrap">{note.content}</p>
+                
+                            <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                              <button 
+                                onClick={() => updateNoteStatus(note._id, 'saved')}
+                                className="text-xs font-bold border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-blue-600 dark:text-blue-400 py-1.5 px-4 rounded-xl transition-all"
+                              >
+                                Save to Archive
+                              </button>
+                              <button 
+                                onClick={() => updateNoteStatus(note._id, 'trash')}
+                                className="text-xs font-bold border border-red-100 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-600 dark:text-red-400 py-1.5 px-4 rounded-xl transition-all"
+                              >
+                                Move to Trash
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
