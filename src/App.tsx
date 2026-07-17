@@ -106,7 +106,7 @@ function App() {
 
       }
 
-      const response = await fetch('https://portal-backend-1m3j.onrender.com/api/notes/send', {
+      const response = await fetch('https://portal-backend-lm3j.onrender.com/api/notes/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,7 +141,7 @@ function App() {
   const updateNoteStatus = async (noteId: string, targetStatus: 'saved' | 'trash') => {
     try {
       const token = localStorage.getItem('userToken');
-      const response = await fetch(`https://portal-backend-1m3j.onrender.com/api/notes/${noteId}/status`, {
+      const response = await fetch(`https://portal-backend-lm3j.onrender.com/api/notes/${noteId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
