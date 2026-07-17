@@ -96,30 +96,47 @@ function App() {
     }
   }
 
+
   const sendNewNote = async (receiverUsername: string, content: string) => {
-    try {
+    try{
       const token = localStorage.getItem('userToken');
+      if(!token){
+        setNoteMessage('Authentication token missing. Please log in again');
+        return
+
+      }
+
       const response = await fetch('https://portal-backend-1m3j.onrender.com/api/notes/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authentication': `Bearer ${token}`
         },
-        body: JSON.stringify({ receiverUsername, content })
-      });
-      const data = await response.json();
-      
-      if (response.ok) {
-        setNoteMessage('Note sent successfully!');
-        setNewNoteContent('');
-        fetchInboxMessage(); 
-      } else {
-        setNoteMessage(data.message || 'Failed to send note.');
+        body: JSON.stringify({receiverUsername, content})
+      })
+
+      const contentType = response.headers.get('content-type');
+      if(!contentType || !contentType.includes('application/json')){
+        const textError = await response.text();
+        console.error('NON-JSON repsonse received:', textError);
+        setNoteMessage(`Server Error (${response.status}): Server did not return JSON.`);
+        return;
       }
-    } catch (error) {
-      setNoteMessage('Server error sending note.');
+
+      const data = await response.json();
+
+      if (response.ok){
+        setNoteMessage('Note sent Succesfully');
+        setNewNoteContent('');
+        fetchInboxMessage();
+      } else {
+        setNoteMessage(data.message || 'Failed to send note');
+      }
+    } catch (error: any){
+      console.error('Networl/Parsing error details:', error);
+      setNoteMessage(`Connection failure: ${error.message || 'Could not reach API server.'}`);
     }
-  };
+  }
 
   const updateNoteStatus = async (noteId: string, targetStatus: 'saved' | 'trash') => {
     try {
