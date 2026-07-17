@@ -391,7 +391,7 @@ function App() {
 
   if (loggedInUser) {
     return (
-      <div className="min-h-screen bg-gray-100 flex flex-col font-sans">
+      <div className="min-h-screen flex flex-col font sans transition-colors duration-200" style={{backgroundColor: 'var(--bg-primary'}}>
         
         {/* HEADER BAR */}
         <header className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 shadow-md flex justify-between items-center z-10">
@@ -425,7 +425,7 @@ function App() {
         <div className="flex flex-1 flex-col md:flex-row">
           
           {/* NAVIGATION SIDEBAR */}
-          <aside className="w-full md:w-64 bg-white border-r border-gray-200 flex flex-row md:flex-col p-3 md:p-4 gap-1 md:space-y-1 overflow-x-auto md:overflow-x-visible">
+          <aside className="w-full md:w-64 border-r p-4 transition-colors duration-200" style={{ backgroundColor: 'var(--bg-secondary', borderColor: 'var(--border-color)'}}>
             <button onClick={() => setActiveTab('home')} className={`flex-1 md:flex-none flex items-center justify-center md:justify-start space-x-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'home' ? 'bg-blue-50 text-blue-600 border border-blue-100/50 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}>
               <span>🏠 Home View</span>
             </button>
